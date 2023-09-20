@@ -1,5 +1,5 @@
 
-from git_deps.blame import blame_via_subprocess, BlameHunk, GitRef
+from git_deps.blame import blame_via_subprocess, BlameHunk, GitRef, Author
 
 def test_blame_via_subprocess():
     hunks = list(blame_via_subprocess(
@@ -10,11 +10,15 @@ def test_blame_via_subprocess():
     expected_hunks = [
         BlameHunk(
             GitRef('6e23a48f888a355ad7e101c797ce1b66c4b7b86a'),
+            orig_committer=Author(time=1526465499),
+            final_committer=Author(time=1526465641),
             orig_start_line_number=12,
             final_start_line_number=12,
             lines_in_hunk=2),
         BlameHunk(
             GitRef('2c9d23b0291157eb1096384ff76e0122747b9bdf'),
+            orig_committer=Author(time=1465680004),
+            final_committer=Author(time=1526388136),
             orig_start_line_number=10,
             final_start_line_number=14,
             lines_in_hunk=2)

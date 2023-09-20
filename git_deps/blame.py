@@ -14,6 +14,14 @@ class GitRef:
     hex: str
 
 @dataclass
+class Author:
+    """
+    Representation of authorship information from a commit
+    (only the fields we care about for dependency detection)
+    """
+    time: int
+
+@dataclass
 class BlameHunk:
     """
     A chunk of a blame output which has the same commit information
@@ -23,7 +31,8 @@ class BlameHunk:
     orig_start_line_number: int
     final_start_line_number: int
     lines_in_hunk: int = 1
-
+    final_committer: Author = None
+    orig_committer: Author = None
 
 def blame_via_subprocess(path, commit, start_line, num_lines):
     """
@@ -39,13 +48,28 @@ def blame_via_subprocess(path, commit, start_line, num_lines):
     ]
     output = subprocess.check_output(cmd, universal_newlines=True)
 
-    current_hunk = None
-    for line in output.split('\n'):
-        m = re.match(r'^([0-9a-f]{40}) (\d+) (\d+) (\d+)$', line)
+    start_hunk_re = re.compile(r'^([0-9a-f]{40}) (\d+) (\d+) (\d+)$')
+    committer_time_re = re.compile(r'^committer-time (\d+)$')
+    author_time_re = re.compile(r'^author-time (\d+)$')
 
+    current_hunk = None
+    commit_times = {}
+    author_times = {}
+
+    def finalize_hunk(hunk):
+        commit_time = commit_times.get(hunk.orig_commit_id.hex)
+        if commit_time:
+            hunk.final_committer = Author(commit_time)
+        author_time = author_times.get(hunk.orig_commit_id.hex)
+        if author_time:
+            hunk.orig_committer = Author(author_time)
+        return hunk
+
+    for line in output.split('\n'):
+        m = start_hunk_re.match(line)
         if m: # starting a new hunk
             if current_hunk:
-                yield current_hunk
+                yield finalize_hunk(current_hunk)
             dependency_sha1, orig_line_num, line_num, length = m.group(1, 2, 3, 4)
             orig_line_num = int(orig_line_num)
             line_num = int(line_num)
@@ -57,5 +81,15 @@ def blame_via_subprocess(path, commit, start_line, num_lines):
                 lines_in_hunk = length
             )
 
+        m = committer_time_re.match(line)
+        if m:
+            committer_time = int(m.group(1))
+            commit_times[current_hunk.orig_commit_id.hex] = committer_time
+
+        m = author_time_re.match(line)
+        if m:
+            author_time = int(m.group(1))
+            author_times[current_hunk.orig_commit_id.hex] = author_time
+
     if current_hunk:
-        yield current_hunk
+        yield finalize_hunk(current_hunk)

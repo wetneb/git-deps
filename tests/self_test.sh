@@ -11,24 +11,25 @@ set -eo pipefail
 echo "Running test suite"
 
 echo "* Dependencies of 4f27a1e, a regular commit"
-git-deps 4f27a1e^! | sort | diff tests/expected_outputs/deps_4f27a1e -
+git-deps 4f27a1e^! | diff tests/expected_outputs/deps_4f27a1e -
 
 echo "* Same, but via pygit2's blame algorithm"
-git-deps --pygit2-blame 4f27a1e^! | sort | diff tests/expected_outputs/deps_4f27a1e -
+git-deps --pygit2-blame 4f27a1e^! | diff tests/expected_outputs/deps_4f27a1e -
 
 echo "* Dependencies of 1ba7ad5, a merge commit"
-git-deps 1ba7ad5^! | sort | diff tests/expected_outputs/deps_1ba7ad5 -
+git-deps 1ba7ad5^! | diff tests/expected_outputs/deps_1ba7ad5 -
 
 echo "* Same, but via pygit2's blame algorithm"
-git-deps --pygit2-blame 1ba7ad5^! | sort | diff tests/expected_outputs/deps_1ba7ad5 -
+git-deps --pygit2-blame 1ba7ad5^! | diff tests/expected_outputs/deps_1ba7ad5 -
 
 echo "* Dependencies of the root commit"
-git-deps b196757^! | sort | diff tests/expected_outputs/deps_b196757 -
+git-deps b196757^! | diff tests/expected_outputs/deps_b196757 -
 
 echo "* Same, but via pygit2's blame algorithm"
-git-deps --pygit2-blame b196757^! | sort | diff tests/expected_outputs/deps_b196757 -
+git-deps --pygit2-blame b196757^! | diff tests/expected_outputs/deps_b196757 -
 
 echo "* Recursive dependencies of a4f27a1e, a regular commit"
+# for this test the order is not determined (yet)
 git-deps -r 4f27a1e^! | sort | diff tests/expected_outputs/recursive_deps_4f27a1e -
 
 echo "All tests passed!"
